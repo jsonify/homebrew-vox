@@ -1,0 +1,35 @@
+name: Test Formula
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [macos-12, macos-13, macos-14]
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Test formula syntax
+      run: |
+        brew audit --strict Formula/vox.rb
+        
+    - name: Test formula installation (if release exists)
+      run: |
+        # Only test if the version exists in releases
+        VERSION=$(grep 'version "' Formula/vox.rb | sed 's/.*version "\(.*\)".*/\1/')
+        if gh release view "v$VERSION" --repo jsonify/vox &>/dev/null; then
+          brew install --formula Formula/vox.rb
+          brew test vox
+        else
+          echo "Release v$VERSION not found, skipping installation test"
+        fi
+      env:
+        HOMEBREW_NO_AUTO_UPDATE: 1
+        GH_TOKEN: ${{ github.token }}
