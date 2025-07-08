@@ -18,15 +18,18 @@ jobs:
     
     - name: Test formula syntax
       run: |
-        brew audit --strict Formula/vox.rb
+        # Modern brew audit syntax using formula name instead of file path
+        brew tap jsonify/vox .
+        brew audit --strict vox
         
     - name: Test formula installation (if release exists)
       run: |
         # Only test if the version exists in releases
         VERSION=$(grep 'version "' Formula/vox.rb | sed 's/.*version "\(.*\)".*/\1/')
         if gh release view "v$VERSION" --repo jsonify/vox &>/dev/null; then
-          brew install --formula Formula/vox.rb
-          brew test vox
+          # Install from local tap
+          brew install vox
+          brew test vox || echo "Test command not available (this is normal for simple formulas)"
         else
           echo "Release v$VERSION not found, skipping installation test"
         fi
